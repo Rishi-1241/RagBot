@@ -110,5 +110,6 @@ B. **Message Handling**
 In summary, this class encapsulates all functionalities required for the LawSikho chatbot, including data initialization, query processing, and response generation.
 
 ### This is how final result looks like!
-![Example Image](1.jpeg)
+<img src="1.jpeg" alt="Example Image" width="300" height="200">
+
 
