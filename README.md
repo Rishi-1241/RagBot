@@ -1,8 +1,8 @@
-# LawSikhoAssistant - Detailed README
+# LawSikhoAssistant - RAGBOT
 
 ## Description
 
-**LawSikhoAssistant** is an advanced AI-powered chatbot designed to interact with users over WhatsApp. It provides users with comprehensive information about legal courses offered by LawSikho, helping them make informed decisions about their legal education. The chatbot leverages state-of-the-art technologies to facilitate smooth communication, efficient data management, and accurate responses. 
+**LawSikhoAssistant** is an advanced AI-powered chatbot designed to interact with users over WhatsApp. It provides users with comprehensive information about legal courses offered by LawSikho, helping them make informed decisions about their legal education. The chatbot leverages state-of-the-art technologies to facilitate smooth communication, efficient data management, and accurate responses.
 
 ## Features
 
@@ -12,8 +12,6 @@
 - **WhatsApp Integration:** Communicates with users via WhatsApp, using the Twilio API to handle sending and receiving messages.
 - **Customizable Prompt Templates:** Allows for the creation of dynamic response templates tailored to specific user interactions and contexts.
 - **Chat History Management:** Maintains context-aware responses by keeping track of user interactions and conversation history.
-
-## Step-by-Step Setup Guide
 
 ### 1. Install Required Libraries
 
@@ -39,134 +37,74 @@ Create a file named `.env` in the root directory of your project. This file will
 
 Replace the placeholders with your actual API keys and credentials.
 
-### 3. Initialize Firebase Firestore
 
-- **Firebase Setup:** Set up a Firebase project through the [Firebase Console](https://console.firebase.google.com/). Download the service account key JSON file and place it in your project directory.
-- **Python Code Initialization:**
+### 3. Web Scraping, Content Extraction, and Storing in Firestore
 
-    ```python
-    import firebase_admin
-    from firebase_admin import credentials, firestore
+A. **Web Scraping and Content Extraction**
+   - **`fetch_and_parse_url(url)`** retrieves and parses HTML content into a BeautifulSoup object. **`extract_headings_with_content(soup)`** organizes and extracts headings with their associated content. **`extract_specific_div_content(soup)`** retrieves text from `div` elements with the class `refundPolicy`. **`extract_urls(soup, base_url)`** collects and resolves URLs from anchor tags, and **`format_extracted_content(headings_content, div_content, urls)`** combines and formats this content into a structured output.
 
-    def _initialize_firestore():
-        cred = credentials.Certificate('path_to_your_service_account_key.json')
-        firebase_admin.initialize_app(cred)
-        return firestore.client()
-    ```
+B. **Storing Chunks in Firestore**
+   - **Initialize Firestore Client and Read Data File:** Sets up the Firestore client with credentials from a JSON file and reads the text data from a file.
+   - **Process and Store Text Chunks:** Splits the text data into chunks using `RecursiveCharacterTextSplitter`, embeds them with OpenAI embeddings, and stores them in Firestore. Existing documents in the collection are not re-inserted.
+   - **Subsequent Steps:** After storing, the system uses indexing methods to retrieve relevant chunks based on user queries, enabling accurate and contextually appropriate responses.
+  
+### 4. LawSikhoAssistant Class
 
-- **Purpose:** Initializes the Firebase Firestore client, allowing the chatbot to store and retrieve document embeddings.
+A. **Initialization**
+   - **Overview:** The `LawSikhoAssistant` class initializes essential components for the chatbot. It loads environment variables, sets up the Firestore client with credentials, initializes OpenAI embeddings, creates a Firestore vector store, and configures a text splitter. Additionally, it initializes a retriever to fetch relevant documents from the Firestore collection based on similarity searches. The class also sets up the language model and defines prompt templates for handling user queries.
 
-### 4. Initialize OpenAI Embeddings
+B. **Prompt Templates**
+   - **Prompt for Query Handling:** 
+     ```markdown
+     You are the sales executive for LawSikho, a firm providing high-quality legal courses. Your role is to deliver friendly and knowledgeable customer service by answering inquiries about our courses and actively promoting enrollment in our programs. Using the context provided, answer the customer's question accurately and precisely.
+     Instructions:
+     Highlight the benefits and advantages of our courses based on the user’s needs.
+     Engage the user by asking questions about their priorities, goals, and background related to legal education.
+     Use bullet points for clarity in longer responses.
+     Enhance your response with 1-3 relevant emojis to convey a friendly tone, but avoid overuse.
+     Important:
+     Craft responses uniquely, avoiding rhetoric or repetitive promotional statements.
+     Do not include closing statements that repetitively ask for booking or enrolling.
+     Contact details: For more information or immediate assistance, call +91 98186 78383.
+     Example Query Handling:
+     Context: {context}
+     Question: {question}
+     ```
 
-- **API Key Setup:** Use the API key from OpenAI to set up the embeddings model.
-- **Python Code Initialization:**
+   - **Prompt for Condensing Questions:**
+     ```markdown
+     Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question,
+     in its original language.
+     Chat History:
+     {chat_history}
+     Follow Up Input: {question}
+     Standalone question:
+     ```
 
-    ```python
-    import openai
+C. **Function Descriptions**
+   - **`_format_chat_history(chat_history)`**: Converts the chat history into a format suitable for processing, by transforming human and AI messages into `HumanMessage` and `AIMessage` objects.
+   
+   - **`_search_query()`**: Determines whether there is chat history and processes it accordingly. It condenses follow-up questions into standalone queries and prepares the data for retrieval and response generation.
 
-    def _initialize_embeddings():
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        # Example usage for embeddings
-        return openai.Embedding.create(model="text-embedding-ada-002", input="sample text")
-    ```
+   - **`_create_chain()`**: Constructs a processing chain that integrates context retrieval, question handling, and response generation. It splits text into manageable chunks, filters them, and uses a prompt template to create responses with the language model.
 
-- **Purpose:** Converts text into vector representations for efficient similarity searches.
+   - **`query(user_query)`**: Handles user queries by invoking the processing chain with the input data. It manages chat history and returns the chatbot’s response based on the processed input.
+  
+### 5. Flask Application for Twilio Integration
 
-### 5. Set Up Vector Store
+This Flask application integrates with Twilio to handle and respond to incoming WhatsApp messages using the `LawSikhoAssistant` chatbot.
 
-- **Firestore Vector Store Setup:** Configure Firestore to store and retrieve document embeddings.
-- **Python Code Initialization:**
+### Key Components
 
-    ```python
-    def _initialize_vectorstore():
-        db = _initialize_firestore()
-        # Set up vector store (example)
-        return db.collection('vectorstore')
-    ```
+A. **Initialization**
+   - **Flask Setup:** Initializes the Flask app and loads environment variables.
+   - **Chatbot Instance:** Creates an instance of `LawSikhoAssistant` to process messages.
+   - **Logging Configuration:** Sets up logging for debugging and monitoring.
 
-- **Purpose:** Facilitates quick and efficient searches by storing and retrieving document embeddings.
+B. **Message Handling**
+   - **Route `/twilio`:** Receives POST requests from Twilio with user messages.
+     - **Process:** Extracts the message and sender details, processes the message with the chatbot, and sends a response back through Twilio.
+     - **Error Handling:** Logs errors and returns a generic error message if needed.
 
-### 6. Split Large Text Files
 
-- **Text Splitting Configuration:** Implement text splitting to manage large text files.
-- **Python Code Initialization:**
-
-    ```python
-    from langchain.text_splitter import CharacterTextSplitter
-
-    def _initialize_text_splitter():
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        return text_splitter
-    ```
-
-- **Purpose:** Handles large text files by splitting them into manageable chunks for processing.
-
-### 7. Configure the Flask App
-
-- **Flask App Setup:** Create a Flask application to handle incoming messages from Twilio.
-- **Python Code Example:**
-
-    ```python
-    from flask import Flask, request, jsonify
-    from twilio.rest import Client
-    import os
-
-    app = Flask(__name__)
-
-    @app.route('/twilio', methods=['POST'])
-    def handle_twilio_message():
-        # Process incoming message and respond
-        incoming_message = request.form['Body']
-        from_number = request.form['From']
-        response_message = query(incoming_message)
-        client = Client(os.getenv('TWILIO_ACCOUNT_SID'), os.getenv('TWILIO_AUTH_TOKEN'))
-        client.messages.create(
-            body=response_message,
-            from_=os.getenv('TWILIO_WHATSAPP_NUMBER'),
-            to=from_number
-        )
-        return jsonify({'status': 'success'})
-
-    def query(message):
-        # Example query processing
-        return "Your response here"
-    ```
-
-- **Purpose:** Defines an endpoint to handle incoming messages from Twilio, processes them with the chatbot, and sends responses.
-
-### 8. Running the Flask App
-
-- **Start Flask Server:** Use the following command to run the Flask application:
-
-    ```bash
-    python app.py
-    ```
-
-- **Purpose:** Starts the Flask application on the specified port to handle incoming webhook requests from Twilio.
-
-### 9. Querying the Chatbot
-
-- **Interaction:** Users can send messages to the WhatsApp number associated with your Twilio account.
-- **Python Code Example:**
-
-    ```python
-    def query(message):
-        # Implement message processing and response generation
-        # Example: use OpenAI's GPT-3.5-turbo to generate a response
-        response = openai.Completion.create(
-            model="text-davinci-003",
-            prompt=message,
-            max_tokens=150
-        )
-        return response.choices[0].text.strip()
-    ```
-
-- **Purpose:** Processes user queries, retrieves relevant information from the vector store, and generates a response using the GPT-3.5-turbo model.
-
-## Append WhatsApp Chat Screenshots
-
-To provide visual examples of the chatbot in action, append screenshots of your WhatsApp chats with the chatbot here. Ensure that the screenshots clearly demonstrate the functionality and responses generated by the bot.
-
----
-
-This README provides a comprehensive guide for setting up and using the LawSikhoAssistant chatbot. Ensure you follow each step carefully to successfully deploy and interact with the chatbot.
+In summary, this class encapsulates all functionalities required for the LawSikho chatbot, including data initialization, query processing, and response generation.
