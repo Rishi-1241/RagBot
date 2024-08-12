@@ -1,103 +1,172 @@
-# Project Overview
+# LawSikhoAssistant - Detailed README
 
-This project is an end-to-end implementation of a LawSikho Assistant chatbot that integrates with WhatsApp via Twilio. The project includes web scraping, content processing, and a Flask application to handle WhatsApp interactions. It leverages Google Firestore for storage and OpenAI's GPT model for generating responses.
+## Description
 
-## Table of Contents
+**LawSikhoAssistant** is an advanced AI-powered chatbot designed to interact with users over WhatsApp. It provides users with comprehensive information about legal courses offered by LawSikho, helping them make informed decisions about their legal education. The chatbot leverages state-of-the-art technologies to facilitate smooth communication, efficient data management, and accurate responses. 
 
-- [Installation](#installation)
-- [Environment Variables](#environment-variables)
-- [Project Structure](#project-structure)
-- [Functionality](#functionality)
-- [Usage](#usage)
-- [License](#license)
+## Features
 
-## Installation
+- **Natural Language Processing (NLP):** Utilizes OpenAI's GPT-3.5-turbo model to understand and generate human-like responses based on user queries.
+- **Database Integration:** Uses Firebase Firestore to store and retrieve document embeddings, enabling scalable and efficient data management.
+- **Text Splitting:** Automatically processes large text files by splitting them into smaller, manageable chunks to facilitate easier analysis and querying.
+- **WhatsApp Integration:** Communicates with users via WhatsApp, using the Twilio API to handle sending and receiving messages.
+- **Customizable Prompt Templates:** Allows for the creation of dynamic response templates tailored to specific user interactions and contexts.
+- **Chat History Management:** Maintains context-aware responses by keeping track of user interactions and conversation history.
 
-To get started, follow these steps:
+## Step-by-Step Setup Guide
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/yourusername/yourrepository.git
-   cd yourrepository
-Create a Virtual Environment:
+### 1. Install Required Libraries
 
-bash
-Copy code
-python -m venv myenv
-source myenv/bin/activate  # On Windows use: myenv\Scripts\activate
-Install Dependencies:
+Ensure that Python is installed on your machine. Use pip to install the necessary libraries:
 
-bash
-Copy code
-pip install -r requirements.txt
-Download the required service account key for Firebase Firestore.
+    pip install firebase-admin openai langchain flask twilio python-dotenv
 
-Set Up Environment Variables:
-Create a .env file in the root directory of your project and add the following variables:
+- **firebase-admin:** For interacting with Firebase Firestore.
+- **openai:** To utilize OpenAI's GPT-3.5-turbo model for natural language processing.
+- **langchain:** Provides tools for text splitting, embeddings, and managing AI functions.
+- **flask:** To create a web server for handling webhook requests from Twilio.
+- **twilio:** Facilitates sending and receiving messages through WhatsApp.
+- **python-dotenv:** Loads environment variables from a `.env` file.
 
-dotenv
-Copy code
-OPENAI_API_KEY=your_openai_api_key
-FCM_API_KEY=your_fcm_api_key
-FIREBASE_SERVICE_ACCOUNT_KEY=path_to_your_service_account_key
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_WHATSAPP_NUMBER=your_twilio_whatsapp_number
-Project Structure
-webscrape.py: Contains functions for scraping content from a URL, extracting headings, specific div content, and URLs, and formatting the extracted content into a text file.
-firestore.py: Handles interactions with Firebase Firestore, including splitting text into chunks and storing them along with embeddings.
-main.py: Defines the LawSikhoAssistant class, which initializes the chatbot with OpenAI and Firestore, handles query processing, and manages chat history.
-twilio.py: Implements a Flask application to handle incoming WhatsApp messages via Twilio, process them with the LawSikhoAssistant, and respond accordingly.
-Functionality
-webscrape.py
-fetch_and_parse_url(url): Fetches the content from the given URL and parses it using BeautifulSoup.
-extract_headings_with_content(soup): Extracts headings (h1, h2, h3) and associated content from the parsed HTML.
-extract_specific_div_content(soup): Extracts and returns content from div elements with a specific class (refundPolicy).
-extract_urls(soup, base_url): Extracts and returns URLs from anchor tags, resolving relative URLs to absolute ones.
-format_extracted_content(headings_content, div_content, urls): Formats the extracted headings, div content, and URLs into a structured text format.
-main(): Coordinates the scraping, extraction, formatting, and saving of content to a text file.
-firestore.py
-count_tokens(text): Counts the number of tokens in a given text.
-split_file_into_chunks(filename, max_tokens=400): Splits the content of a file into chunks, ensuring that no chunk exceeds the specified token limit.
-store_chunks_to_file(chunks, filename): Saves the chunks into a file, separating them with a custom separator.
-Document class: Represents a document with page content and metadata.
-Storing chunks and embeddings: Converts text chunks into Document objects and stores them in Firestore along with their embeddings.
-main.py
-LawSikhoAssistant class: The core class for the chatbot, which initializes necessary components, handles queries, and maintains chat history.
-_load_env(): Loads environment variables.
-_initialize_firestore(): Initializes Firebase Firestore with credentials.
-_initialize_embeddings(): Sets up OpenAI embeddings.
-_initialize_vectorstore(): Initializes FirestoreVectorStore with the embeddings.
-_initialize_text_splitter(): Sets up the text splitter for chunking content.
-_initialize_retriever(): Initializes the retriever for fetching relevant documents.
-_search_query(): Handles the query processing logic.
-_create_chain(): Creates the processing chain for handling queries.
-query(user_query: str): Processes a user query and returns a response.
-twilio.py
-webhook(): Handles incoming messages from Twilio, processes them with the LawSikhoAssistant, and responds via Twilio.
-Usage
-Run the Web Scraping Script:
+### 2. Create a .env File
 
-bash
-Copy code
-python webscrape.py
-Run the Firestore Processing Script:
+Create a file named `.env` in the root directory of your project. This file will store sensitive information such as API keys and credentials:
 
-bash
-Copy code
-python firestore.py
-Start the Flask Application:
+    OPENAI_API_KEY=your_openai_api_key
+    TWILIO_ACCOUNT_SID=your_twilio_account_sid
+    TWILIO_AUTH_TOKEN=your_twilio_auth_token
+    TWILIO_WHATSAPP_NUMBER=your_twilio_whatsapp_number
 
-bash
-Copy code
-python twilio.py
-Interact with the WhatsApp Bot:
-Send messages to the Twilio WhatsApp number to interact with the chatbot.
+Replace the placeholders with your actual API keys and credentials.
 
-License
-This project is licensed under the MIT License. See the LICENSE file for details.
+### 3. Initialize Firebase Firestore
 
-css
-Copy code
+- **Firebase Setup:** Set up a Firebase project through the [Firebase Console](https://console.firebase.google.com/). Download the service account key JSON file and place it in your project directory.
+- **Python Code Initialization:**
 
-Feel free to adjust any specifics to better fit your project or personal preferences!
+    ```python
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+
+    def _initialize_firestore():
+        cred = credentials.Certificate('path_to_your_service_account_key.json')
+        firebase_admin.initialize_app(cred)
+        return firestore.client()
+    ```
+
+- **Purpose:** Initializes the Firebase Firestore client, allowing the chatbot to store and retrieve document embeddings.
+
+### 4. Initialize OpenAI Embeddings
+
+- **API Key Setup:** Use the API key from OpenAI to set up the embeddings model.
+- **Python Code Initialization:**
+
+    ```python
+    import openai
+
+    def _initialize_embeddings():
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        # Example usage for embeddings
+        return openai.Embedding.create(model="text-embedding-ada-002", input="sample text")
+    ```
+
+- **Purpose:** Converts text into vector representations for efficient similarity searches.
+
+### 5. Set Up Vector Store
+
+- **Firestore Vector Store Setup:** Configure Firestore to store and retrieve document embeddings.
+- **Python Code Initialization:**
+
+    ```python
+    def _initialize_vectorstore():
+        db = _initialize_firestore()
+        # Set up vector store (example)
+        return db.collection('vectorstore')
+    ```
+
+- **Purpose:** Facilitates quick and efficient searches by storing and retrieving document embeddings.
+
+### 6. Split Large Text Files
+
+- **Text Splitting Configuration:** Implement text splitting to manage large text files.
+- **Python Code Initialization:**
+
+    ```python
+    from langchain.text_splitter import CharacterTextSplitter
+
+    def _initialize_text_splitter():
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        return text_splitter
+    ```
+
+- **Purpose:** Handles large text files by splitting them into manageable chunks for processing.
+
+### 7. Configure the Flask App
+
+- **Flask App Setup:** Create a Flask application to handle incoming messages from Twilio.
+- **Python Code Example:**
+
+    ```python
+    from flask import Flask, request, jsonify
+    from twilio.rest import Client
+    import os
+
+    app = Flask(__name__)
+
+    @app.route('/twilio', methods=['POST'])
+    def handle_twilio_message():
+        # Process incoming message and respond
+        incoming_message = request.form['Body']
+        from_number = request.form['From']
+        response_message = query(incoming_message)
+        client = Client(os.getenv('TWILIO_ACCOUNT_SID'), os.getenv('TWILIO_AUTH_TOKEN'))
+        client.messages.create(
+            body=response_message,
+            from_=os.getenv('TWILIO_WHATSAPP_NUMBER'),
+            to=from_number
+        )
+        return jsonify({'status': 'success'})
+
+    def query(message):
+        # Example query processing
+        return "Your response here"
+    ```
+
+- **Purpose:** Defines an endpoint to handle incoming messages from Twilio, processes them with the chatbot, and sends responses.
+
+### 8. Running the Flask App
+
+- **Start Flask Server:** Use the following command to run the Flask application:
+
+    ```bash
+    python app.py
+    ```
+
+- **Purpose:** Starts the Flask application on the specified port to handle incoming webhook requests from Twilio.
+
+### 9. Querying the Chatbot
+
+- **Interaction:** Users can send messages to the WhatsApp number associated with your Twilio account.
+- **Python Code Example:**
+
+    ```python
+    def query(message):
+        # Implement message processing and response generation
+        # Example: use OpenAI's GPT-3.5-turbo to generate a response
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=message,
+            max_tokens=150
+        )
+        return response.choices[0].text.strip()
+    ```
+
+- **Purpose:** Processes user queries, retrieves relevant information from the vector store, and generates a response using the GPT-3.5-turbo model.
+
+## Append WhatsApp Chat Screenshots
+
+To provide visual examples of the chatbot in action, append screenshots of your WhatsApp chats with the chatbot here. Ensure that the screenshots clearly demonstrate the functionality and responses generated by the bot.
+
+---
+
+This README provides a comprehensive guide for setting up and using the LawSikhoAssistant chatbot. Ensure you follow each step carefully to successfully deploy and interact with the chatbot.
